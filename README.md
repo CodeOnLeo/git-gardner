@@ -97,10 +97,16 @@ sequenceDiagram
 
 1. **GitHub 로그인**:
    - 웹사이트에서 "GitHub 계정으로 로그인" 버튼을 클릭합니다.
+   <img width="484" alt="스크린샷 2024-12-09 오후 10 38 53" src="https://github.com/user-attachments/assets/18beeece-ff65-49a6-aad9-c24985fd2da4">
+   
    - OAuth2 인증을 통해 GitHub 계정을 연결합니다.
+   <img width="986" alt="스크린샷 2024-12-09 오후 10 41 49" src="https://github.com/user-attachments/assets/f1dd9684-4b74-41c2-a9fa-9940e162d78e">
+
 
 2. **알림 이메일 입력**:
    - 알림을 받을 이메일 주소를 입력합니다.
+   <img width="468" alt="스크린샷 2024-12-09 오후 10 42 33" src="https://github.com/user-attachments/assets/5f4c9210-83ca-44c4-9402-5a6877a35053">
+
 
 ---
 
