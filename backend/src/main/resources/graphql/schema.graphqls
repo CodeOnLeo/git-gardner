@@ -1,0 +1,15 @@
+type Query{
+    user: User!
+}
+
+type Mutation{
+    registerEmail(email: String!): String!
+}
+
+type User{
+    id: ID!
+    name: String
+    login: String
+    avatarUrl: String
+    email: String
+}
