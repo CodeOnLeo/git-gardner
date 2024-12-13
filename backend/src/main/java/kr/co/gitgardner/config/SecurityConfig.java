@@ -18,6 +18,7 @@ public class SecurityConfig {
                 // TODO: csrf 처리 필요
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/graphiql","graphql").permitAll()
                         .requestMatchers("/").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2.defaultSuccessUrl("http://localhost:3000/dashboard", true))
