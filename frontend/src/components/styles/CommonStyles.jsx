@@ -125,3 +125,15 @@ export const Icon = styled.svg`
   width: 1.5rem;
   height: 1.5rem;
 `;
+
+export const LogoutInfo = styled.span`
+  font-size: 14px;
+  color: #666;
+  a {
+    color: #f04e30;
+    text-decoration: underline;
+    &:hover {
+      color: #d63c24;
+    }
+  }
+`;
