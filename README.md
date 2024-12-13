@@ -105,12 +105,20 @@ sequenceDiagram
 
 2. **알림 이메일 입력**:
    - 알림을 받을 이메일 주소를 입력합니다.
-   <img width="468" alt="스크린샷 2024-12-09 오후 10 42 33" src="https://github.com/user-attachments/assets/5f4c9210-83ca-44c4-9402-5a6877a35053">
+   - 로그아웃을 원하는 경우 "애플리케이션 로그아웃" 버튼을 클릭합니다.
+   - 깃허브 계정의 로그아웃을 원하는 경우 로그아웃 버튼 하단의 링크를 클릭합니다.
+     <img width="479" alt="스크린샷 2024-12-13 오후 12 48 21" src="https://github.com/user-attachments/assets/dd9a6d4d-e6e7-49ad-86e2-88601c0fe3b9" />
+
 
 
 ---
 
 ## 배포 URL
+
+---
+
+## UI 라이브러리
+- [D3OXY](https://uiverse.io/D3OXY/short-panther-37)
 
 ---
 
