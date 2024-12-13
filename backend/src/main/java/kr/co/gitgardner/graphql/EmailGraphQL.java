@@ -12,7 +12,7 @@ public class EmailGraphQL {
     // TODO : DB 구현 후 수정할 것 !!
     private final Set<String> registeredEmails = new HashSet<>();
 
-    public record RegisterResponse(boolean sucess, String message){}
+    public record RegisterResponse(boolean success, String message){}
 
     // TODO : 이메일 유효성 검증 로직 추가 필요
     @MutationMapping
