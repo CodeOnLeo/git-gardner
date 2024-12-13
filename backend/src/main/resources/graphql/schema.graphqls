@@ -3,7 +3,12 @@ type Query{
 }
 
 type Mutation{
-    registerEmail(email: String!): String!
+    registerEmail(email: String!): RegisterResponse!
+}
+
+type RegisterResponse{
+    success: Boolean!
+    message: String!
 }
 
 type User{

@@ -12,10 +12,16 @@ public class EmailGraphQL {
     // TODO : DB 구현 후 수정할 것 !!
     private final Set<String> registeredEmails = new HashSet<>();
 
+    public record RegisterResponse(boolean sucess, String message){}
+
     // TODO : 이메일 유효성 검증 로직 추가 필요
     @MutationMapping
-    public String registerEmail(@Argument String email) {
+    public RegisterResponse registerEmail(@Argument String email) {
+        if(registeredEmails.contains(email)) {
+            return new RegisterResponse(false, "이미 등록된 이메일입니다.");
+        }
+
         registeredEmails.add(email);
-        return "등록 완료";
+        return new RegisterResponse(true, "이메일 등록이 완료되었습니다.");
     }
 }
