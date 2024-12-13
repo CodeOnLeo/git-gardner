@@ -6,11 +6,11 @@ public class GitHubResponse {
     public Data data;
 
     public static class Data {
-        public GitHubResponseUser gitHubResponseUser;
+        public GitHubResponseUser user;
     }
 
     public static class GitHubResponseUser {
-        public ContributionCollection contributionCollection;
+        public ContributionCollection contributionsCollection;
     }
 
     public static class ContributionCollection {

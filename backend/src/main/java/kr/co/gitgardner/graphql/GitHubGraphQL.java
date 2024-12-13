@@ -7,11 +7,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Collections;
+import java.util.List;
+
 @Controller
 public class GitHubGraphQL {
     private final WebClient webClient;
 
-    @Value("${github.api.token")
+    @Value("${github.api.token}")
     private String gitHubApiToken;
 
     public GitHubGraphQL(WebClient.Builder webClientBuilder) {
@@ -19,7 +22,7 @@ public class GitHubGraphQL {
     }
 
     @QueryMapping
-    public String getContibutionStatus(@AuthenticationPrincipal OAuth2User principal) {
+    public ContributionStatus getContributionStatus(@AuthenticationPrincipal OAuth2User principal) {
         String githubLogin = principal.getAttribute("login");
 
         String query = """
@@ -40,11 +43,25 @@ public class GitHubGraphQL {
                     }
                 """.formatted(githubLogin);
 
-        return webClient.post()
+        GitHubResponse response = webClient.post()
                 .header("Authorization", "Bearer " + gitHubApiToken)
-                .bodyValue("{\"query\":\"" + query.replace("\n", " ") + "\"}")
+                .header("Content-Type", "application/json")
+                .bodyValue("{\"query\":\"" + query.replace("\"", "\\\"").replace("\n", " ") + "\"}")
                 .retrieve()
-                .bodyToMono(String.class)
+                .bodyToMono(GitHubResponse.class)
                 .block();
+
+        if (response == null || response.data == null || response.data.user == null) {
+            return new ContributionStatus(0, Collections.emptyList());
+        }
+
+        var calendar = response.data.user.contributionsCollection.contributionCalendar;
+
+        List<ContributionDay> days = calendar.weeks.stream()
+                .flatMap(week -> week.contributionDays.stream())
+                .map(day -> new ContributionDay(day.date, day.contributionCount))
+                .toList();
+
+        return new ContributionStatus(calendar.totalContributions, days);
     }
 }
