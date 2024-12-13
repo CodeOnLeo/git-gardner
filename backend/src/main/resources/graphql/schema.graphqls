@@ -1,5 +1,6 @@
 type Query{
     user: User!
+    getContributionStatus: ContributionStatus!
 }
 
 type Mutation{
@@ -17,4 +18,14 @@ type User{
     login: String
     avatarUrl: String
     email: String
+}
+
+type ContributionStatus{
+    totalContributions: Int!
+    days: [ContributionDay!]!
+}
+
+type ContributionDay{
+    date: String!
+    contributionCount: Int!
 }
