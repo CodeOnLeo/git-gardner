@@ -5,20 +5,24 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({children}) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:8080/authenticated",{
+        fetch("http://localhost:8080/authenticated", {
             credentials: "include",
-        }).then(res => {
-            if(res.ok){
-                setIsAuthenticated(true);
-            } else {
-                setIsAuthenticated(false);
-            }
         })
-            .catch(() => setIsAuthenticated(false));
+            .then(async (res) => {
+                const isAuth = await res.json();
+                setIsAuthenticated(isAuth);
+            })
+            .catch((err) => {
+                setIsAuthenticated(false);
+            });
     }, []);
+
+    if (isAuthenticated === null) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <AuthContext.Provider value={{isAuthenticated}}>
