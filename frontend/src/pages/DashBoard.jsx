@@ -1,7 +1,7 @@
 import LogoutButton from "../components/LogoutButton";
 import {Button, Form, Input, StyledWrapper, Title} from "../components/styles/CommonStyles";
 import {useEffect, useState} from "react";
-import fetchContributionStatus from "../services/fetchContributionStatus";
+import { fetchContributionStatus, hasCommitToday } from "../services/fetchContributionStatus";
 import HeatMapGrid from "react-heatmap-grid";
 
 const DashBoard = () => {
@@ -56,6 +56,24 @@ const DashBoard = () => {
         };
         fetchData();
     }, []);
+
+    useEffect(() => {
+        alert("이펙트 실행");
+        const checkCommitStatus = async () => {
+            try{
+                const committedToday = await hasCommitToday();
+                // TODO : 테스트용
+                if(!committedToday){
+                    alert("오늘의 커밋 없음");
+                }else{
+                    alert("오늘 커밋 있음");
+                }
+            }catch (e){
+                console.error("[ERROR]", e);
+            }
+        };
+        checkCommitStatus();
+    },[]);
 
     const prepareHeatmapData = () => {
         if (!contributionData) return { xLabels: [], yLabels: [], heatmapData: [] };
