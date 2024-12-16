@@ -7,6 +7,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,5 +64,12 @@ public class GitHubGraphQL {
                 .toList();
 
         return new ContributionStatus(calendar.totalContributions, days);
+    }
+
+    @QueryMapping
+    public boolean hasCommitToday(@AuthenticationPrincipal OAuth2User principal) {
+        ContributionStatus status = getContributionStatus(principal);
+        LocalDate today = LocalDate.now();
+        return status.days().stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
     }
 }

@@ -1,6 +1,7 @@
 type Query{
     user: User!
     getContributionStatus: ContributionStatus!
+    hasCommitToday: Boolean!
 }
 
 type Mutation{
