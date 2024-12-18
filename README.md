@@ -107,7 +107,9 @@ sequenceDiagram
    - 알림을 받을 이메일 주소를 입력합니다.
    - 로그아웃을 원하는 경우 "애플리케이션 로그아웃" 버튼을 클릭합니다.
    - 깃허브 계정의 로그아웃을 원하는 경우 로그아웃 버튼 하단의 링크를 클릭합니다.
-     <img width="479" alt="스크린샷 2024-12-13 오후 12 48 21" src="https://github.com/user-attachments/assets/dd9a6d4d-e6e7-49ad-86e2-88601c0fe3b9" />
+   - 최근 4주간의 커밋내역이 보여집니다.
+   - 오늘 날짜의 경우 빨간색으로 표시됩니다.
+   <img width="469" alt="스크린샷 2024-12-18 오후 5 52 18" src="https://github.com/user-attachments/assets/56b42a88-e06f-4228-b445-56f00a16eb3a" />
 
 
 
