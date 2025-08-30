@@ -26,7 +26,7 @@ export const fetchContributionStatus = async () => {
         }
 
         const {data} = await response.json();
-        return data.getContributionStatus;
+        return data?.getContributionStatus || null;
     }catch (e) {
         console.error("[ERROR]", e);
         throw e;
@@ -55,7 +55,7 @@ export const hasCommitToday = async () => {
         }
 
         const {data} = await  response.json();
-        return data.hasCommitToday;
+        return data?.hasCommitToday || false;
     } catch (e) {
         console.error("[ERROR]", e);
         throw e;

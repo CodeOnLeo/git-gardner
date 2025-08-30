@@ -1,10 +1,13 @@
 package kr.co.gitgardner.graphql;
 
+import graphql.schema.DataFetchingEnvironment;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -15,14 +18,22 @@ import java.util.List;
 @Controller
 public class GitHubGraphQL {
     private final WebClient webClient;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
-    public GitHubGraphQL(WebClient.Builder webClientBuilder) {
+    public GitHubGraphQL(WebClient.Builder webClientBuilder, OAuth2AuthorizedClientService authorizedClientService) {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com/graphql").build();
+        this.authorizedClientService = authorizedClientService;
     }
 
     @QueryMapping
-    public ContributionStatus getContributionStatus(@AuthenticationPrincipal OAuth2User principal,
-                                                   @RegisteredOAuth2AuthorizedClient("github") OAuth2AuthorizedClient authorizedClient) {
+    public ContributionStatus getContributionStatus(DataFetchingEnvironment env) {
+        OAuth2User principal = getCurrentUser();
+        OAuth2AuthorizedClient authorizedClient = getCurrentAuthorizedClient();
+        
+        if (principal == null || authorizedClient == null) {
+            return new ContributionStatus(0, Collections.emptyList());
+        }
+        
         String githubLogin = principal.getAttribute("login");
         String accessToken = authorizedClient.getAccessToken().getTokenValue();
 
@@ -67,9 +78,15 @@ public class GitHubGraphQL {
     }
 
     @QueryMapping
-    public boolean hasCommitToday(@AuthenticationPrincipal OAuth2User principal,
-                                 @RegisteredOAuth2AuthorizedClient("github") OAuth2AuthorizedClient authorizedClient) {
-        ContributionStatus status = getContributionStatus(principal, authorizedClient);
+    public boolean hasCommitToday(DataFetchingEnvironment env) {
+        OAuth2User principal = getCurrentUser();
+        OAuth2AuthorizedClient authorizedClient = getCurrentAuthorizedClient();
+        
+        if (principal == null || authorizedClient == null) {
+            return false;
+        }
+        
+        ContributionStatus status = getContributionStatus(env);
         LocalDate today = LocalDate.now();
         return status.days().stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
     }
@@ -169,5 +186,32 @@ public class GitHubGraphQL {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    private OAuth2User getCurrentUser() {
+        try {
+            SecurityContext context = SecurityContextHolder.getContext();
+            if (context.getAuthentication() instanceof OAuth2AuthenticationToken token) {
+                return token.getPrincipal();
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+    
+    private OAuth2AuthorizedClient getCurrentAuthorizedClient() {
+        try {
+            SecurityContext context = SecurityContextHolder.getContext();
+            if (context.getAuthentication() instanceof OAuth2AuthenticationToken token) {
+                return authorizedClientService.loadAuthorizedClient(
+                    token.getAuthorizedClientRegistrationId(), 
+                    token.getName()
+                );
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 }

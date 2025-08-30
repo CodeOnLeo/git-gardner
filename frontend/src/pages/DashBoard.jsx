@@ -38,7 +38,9 @@ const DashboardContainer = styled.div`
     }
 `;
 
-const StatusIndicator = styled.div`
+const StatusIndicator = styled.div.withConfig({
+    shouldForwardProp: (prop) => prop !== 'hasCommit'
+})`
     display: flex;
     align-items: center;
     justify-content: center;
@@ -397,8 +399,8 @@ const DashBoard = () => {
                     fetchContributionStatus()
                 ]);
 
-                setCommitStatus(committedToday);
-                setContributionData(contributionData);
+                setCommitStatus(committedToday || false);
+                setContributionData(contributionData || null);
             } catch (e) {
                 console.error("[ERROR]", e);
                 setError("데이터 로딩 실패");
