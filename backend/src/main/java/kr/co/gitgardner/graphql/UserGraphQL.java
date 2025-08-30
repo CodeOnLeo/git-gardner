@@ -9,8 +9,8 @@ import org.springframework.stereotype.Controller;
 public class UserGraphQL {
 
     @QueryMapping
-    public User user(@AuthenticationPrincipal OAuth2User principal) {
-        return new User(
+    public UserInfo user(@AuthenticationPrincipal OAuth2User principal) {
+        return new UserInfo(
                 principal.getAttribute("id"),
                 principal.getAttribute("name"),
                 principal.getAttribute("login"),
@@ -18,4 +18,6 @@ public class UserGraphQL {
                 principal.getAttribute("email")
         );
     }
+
+    public record UserInfo(Long id, String name, String login, String avatarUrl, String email) {}
 }

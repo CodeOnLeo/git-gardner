@@ -123,4 +123,51 @@ public class GitHubGraphQL {
             return false;
         }
     }
+
+    public boolean hasCommitTodayWithAccessToken(String login, String accessToken) {
+        try {
+            String query = """
+                        query {
+                            user(login: "%s") {
+                                contributionsCollection {
+                                    contributionCalendar {
+                                        totalContributions
+                                        weeks {
+                                            contributionDays {
+                                                date
+                                                contributionCount
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    """.formatted(login);
+
+            GitHubResponse response = webClient.post()
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Content-Type", "application/json")
+                    .bodyValue("{\"query\":\"" + query.replace("\"", "\\\"").replace("\n", " ") + "\"}")
+                    .retrieve()
+                    .bodyToMono(GitHubResponse.class)
+                    .block();
+
+            if (response == null || response.data == null || response.data.user == null) {
+                return false;
+            }
+
+            var calendar = response.data.user.contributionsCollection.contributionCalendar;
+            List<ContributionDay> days = calendar.weeks.stream()
+                    .flatMap(week -> week.contributionDays.stream())
+                    .map(day -> new ContributionDay(day.date, day.contributionCount))
+                    .toList();
+
+            LocalDate today = LocalDate.now();
+            return days.stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

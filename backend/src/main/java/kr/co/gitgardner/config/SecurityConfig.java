@@ -1,5 +1,6 @@
 package kr.co.gitgardner.config;
 
+import kr.co.gitgardner.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -8,11 +9,21 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 public class SecurityConfig {
+    private final UserService userService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
+
+    public SecurityConfig(UserService userService, OAuth2AuthorizedClientService authorizedClientService) {
+        this.userService = userService;
+        this.authorizedClientService = authorizedClientService;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -25,9 +36,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/authenticated","/graphiql","graphql").permitAll()
                         .requestMatchers("/").permitAll()
+                        .requestMatchers("/test-email").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
+                            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+                            String login = oAuth2User.getAttribute("login");
+                            
+                            OAuth2AuthorizedClient authorizedClient = 
+                                authorizedClientService.loadAuthorizedClient("github", login);
+                            
+                            if (authorizedClient != null) {
+                                userService.saveOrUpdateUser(oAuth2User, authorizedClient);
+                            }
+                            
                             response.sendRedirect("http://localhost:3000/dashboard");
                         })
                 )
