@@ -322,6 +322,9 @@ const LegendItem = styled.div`
 
 const DashBoard = () => {
     const [email, setEmail] = useState("");
+    const [registeredEmail, setRegisteredEmail] = useState(null);
+    const [isEmailRegistered, setIsEmailRegistered] = useState(false);
+    const [isEditingEmail, setIsEditingEmail] = useState(false);
     const [contributionData, setContributionData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -346,6 +349,32 @@ const DashBoard = () => {
 
     const handleEmailChange = (e) => setEmail(e.target.value);
 
+    const fetchUserEmail = async () => {
+        try {
+            const response = await fetch("http://localhost:8080/graphql", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    query: `query {
+                        getUserEmail {
+                            email
+                            isRegistered
+                        }
+                    }`,
+                }),
+            });
+
+            const data = await response.json();
+            const result = data.data.getUserEmail;
+            
+            setRegisteredEmail(result.email);
+            setIsEmailRegistered(result.isRegistered);
+        } catch (err) {
+            console.error("[ERROR]", err);
+            setIsEmailRegistered(false);
+        }
+    };
+
     const handleEmailSubmit = async () => {
         if (!email) {
             setEmailMessage({ type: 'error', text: '이메일 주소를 입력해주세요.' });
@@ -356,12 +385,13 @@ const DashBoard = () => {
         setEmailMessage(null);
 
         try {
+            const mutation = isEmailRegistered ? 'updateEmail' : 'registerEmail';
             const response = await fetch("http://localhost:8080/graphql", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     query: `mutation {
-                        registerEmail(email: "${email}") {
+                        ${mutation}(email: "${email}") {
                             success
                             message
                         }
@@ -370,7 +400,7 @@ const DashBoard = () => {
             });
 
             const data = await response.json();
-            const result = data.data.registerEmail;
+            const result = data.data[mutation];
             
             setEmailMessage({ 
                 type: result.success ? 'success' : 'error', 
@@ -378,6 +408,9 @@ const DashBoard = () => {
             });
             
             if (result.success) {
+                setRegisteredEmail(email);
+                setIsEmailRegistered(true);
+                setIsEditingEmail(false);
                 setEmail("");
             }
         } catch (err) {
@@ -391,12 +424,25 @@ const DashBoard = () => {
         }
     };
 
+    const handleEditEmail = () => {
+        setIsEditingEmail(true);
+        setEmail(registeredEmail || "");
+        setEmailMessage(null);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingEmail(false);
+        setEmail("");
+        setEmailMessage(null);
+    };
+
     useEffect(() => {
         const initializeDashboard = async () => {
             try {
                 const [committedToday, contributionData] = await Promise.all([
                     hasCommitToday(),
-                    fetchContributionStatus()
+                    fetchContributionStatus(),
+                    fetchUserEmail()
                 ]);
 
                 setCommitStatus(committedToday || false);
@@ -602,26 +648,72 @@ const DashBoard = () => {
 
                     <EmailFormContainer>
                         <CardTitle>🔔 정원사 알림 설정</CardTitle>
-                        <Input 
-                            type="email" 
-                            placeholder="정원 관리 알림을 받을 이메일을 입력하세요" 
-                            value={email} 
-                            onChange={handleEmailChange}
-                        />
-                        <Button 
-                            type="button" 
-                            onClick={handleEmailSubmit} 
-                            disabled={emailSubmitting}
-                        >
-                            {emailSubmitting ? (
-                                <>
-                                    <LoadingSpinner />
-                                    정원사 등록 중...
-                                </>
-                            ) : (
-                                '🌿 정원사로 등록하기'
-                            )}
-                        </Button>
+                        
+                        {isEmailRegistered && !isEditingEmail ? (
+                            <>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '16px',
+                                    padding: '16px 24px',
+                                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
+                                    border: '2px solid var(--success-color)',
+                                    borderRadius: '12px',
+                                    color: 'var(--success-color)',
+                                    fontWeight: '600'
+                                }}>
+                                    <span>📧</span>
+                                    <span>{registeredEmail}</span>
+                                </div>
+                                <Button 
+                                    type="button" 
+                                    onClick={handleEditEmail}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                        border: 'none'
+                                    }}
+                                >
+                                    ✏️ 이메일 변경하기
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Input 
+                                    type="email" 
+                                    placeholder="정원 관리 알림을 받을 이메일을 입력하세요" 
+                                    value={email} 
+                                    onChange={handleEmailChange}
+                                />
+                                <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
+                                    <Button 
+                                        type="button" 
+                                        onClick={handleEmailSubmit} 
+                                        disabled={emailSubmitting}
+                                    >
+                                        {emailSubmitting ? (
+                                            <>
+                                                <LoadingSpinner />
+                                                {isEmailRegistered ? '이메일 변경 중...' : '정원사 등록 중...'}
+                                            </>
+                                        ) : (
+                                            isEmailRegistered ? '💌 이메일 변경하기' : '🌿 정원사로 등록하기'
+                                        )}
+                                    </Button>
+                                    {isEditingEmail && (
+                                        <Button 
+                                            type="button" 
+                                            onClick={handleCancelEdit}
+                                            style={{
+                                                background: '#6b7280',
+                                                border: 'none'
+                                            }}
+                                        >
+                                            취소
+                                        </Button>
+                                    )}
+                                </div>
+                            </>
+                        )}
                         
                         {emailMessage && (
                             emailMessage.type === 'success' ? 
