@@ -10,8 +10,12 @@ public class UserGraphQL {
 
     @QueryMapping
     public UserInfo user(@AuthenticationPrincipal OAuth2User principal) {
+        // GitHub ID는 Integer로 오므로 Long으로 변환
+        Integer githubId = principal.getAttribute("id");
+        Long id = githubId != null ? githubId.longValue() : null;
+        
         return new UserInfo(
-                principal.getAttribute("id"),
+                id,
                 principal.getAttribute("name"),
                 principal.getAttribute("login"),
                 principal.getAttribute("avatar_url"),

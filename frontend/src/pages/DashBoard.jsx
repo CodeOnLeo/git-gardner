@@ -119,18 +119,18 @@ const EmailFormContainer = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    gap: 16px;
     
     @media (max-width: 1024px) {
-        gap: 22px;
+        gap: 14px;
     }
     
     @media (max-width: 768px) {
-        gap: 20px;
+        gap: 12px;
     }
     
     @media (max-width: 480px) {
-        gap: 18px;
+        gap: 10px;
     }
 `;
 
@@ -321,15 +321,10 @@ const LegendItem = styled.div`
 `;
 
 const DashBoard = () => {
-    const [email, setEmail] = useState("");
-    const [registeredEmail, setRegisteredEmail] = useState(null);
-    const [isEmailRegistered, setIsEmailRegistered] = useState(false);
-    const [isEditingEmail, setIsEditingEmail] = useState(false);
+    const [userEmail, setUserEmail] = useState(null);
     const [contributionData, setContributionData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [emailSubmitting, setEmailSubmitting] = useState(false);
-    const [emailMessage, setEmailMessage] = useState(null);
     const [commitStatus, setCommitStatus] = useState(null);
     
     // 반응형 cellSize를 안전하게 계산
@@ -347,96 +342,46 @@ const DashBoard = () => {
         }
     };
 
-    const handleEmailChange = (e) => setEmail(e.target.value);
-
     const fetchUserEmail = async () => {
         try {
             const response = await fetch("http://localhost:8080/graphql", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: 'include', // 쿠키 포함하여 인증 정보 전송
                 body: JSON.stringify({
                     query: `query {
-                        getUserEmail {
+                        user {
                             email
-                            isRegistered
                         }
                     }`,
                 }),
             });
 
             const data = await response.json();
-            const result = data.data.getUserEmail;
+            console.log("GraphQL response:", data); // 디버깅용 로그
             
-            setRegisteredEmail(result.email);
-            setIsEmailRegistered(result.isRegistered);
-        } catch (err) {
-            console.error("[ERROR]", err);
-            setIsEmailRegistered(false);
-        }
-    };
-
-    const handleEmailSubmit = async () => {
-        if (!email) {
-            setEmailMessage({ type: 'error', text: '이메일 주소를 입력해주세요.' });
-            return;
-        }
-
-        setEmailSubmitting(true);
-        setEmailMessage(null);
-
-        try {
-            const mutation = isEmailRegistered ? 'updateEmail' : 'registerEmail';
-            const response = await fetch("http://localhost:8080/graphql", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    query: `mutation {
-                        ${mutation}(email: "${email}") {
-                            success
-                            message
-                        }
-                    }`,
-                }),
-            });
-
-            const data = await response.json();
-            const result = data.data[mutation];
+            if (data.errors) {
+                console.error("GraphQL errors:", data.errors);
+            }
             
-            setEmailMessage({ 
-                type: result.success ? 'success' : 'error', 
-                text: result.message 
-            });
-            
-            if (result.success) {
-                setRegisteredEmail(email);
-                setIsEmailRegistered(true);
-                setIsEditingEmail(false);
-                setEmail("");
+            if (data.data && data.data.user) {
+                setUserEmail(data.data.user.email);
+            } else {
+                console.log("No user data received, user might not be authenticated");
+                setUserEmail(null);
             }
         } catch (err) {
             console.error("[ERROR]", err);
-            setEmailMessage({ 
-                type: 'error', 
-                text: '서버 요청에 실패했습니다.' 
-            });
-        } finally {
-            setEmailSubmitting(false);
+            setUserEmail(null);
         }
     };
 
-    const handleEditEmail = () => {
-        setIsEditingEmail(true);
-        setEmail(registeredEmail || "");
-        setEmailMessage(null);
-    };
-
-    const handleCancelEdit = () => {
-        setIsEditingEmail(false);
-        setEmail("");
-        setEmailMessage(null);
-    };
 
     useEffect(() => {
+        let isMounted = true; // cleanup flag
+        
         const initializeDashboard = async () => {
             try {
                 const [committedToday, contributionData] = await Promise.all([
@@ -445,17 +390,27 @@ const DashBoard = () => {
                     fetchUserEmail()
                 ]);
 
-                setCommitStatus(committedToday || false);
-                setContributionData(contributionData || null);
+                if (isMounted) {
+                    setCommitStatus(committedToday || false);
+                    setContributionData(contributionData || null);
+                }
             } catch (e) {
-                console.error("[ERROR]", e);
-                setError("데이터 로딩 실패");
+                if (isMounted) {
+                    console.error("[ERROR]", e);
+                    setError("데이터 로딩 실패");
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         initializeDashboard();
+        
+        return () => {
+            isMounted = false; // cleanup
+        };
     }, []);
 
     const prepareHeatmapData = () => {
@@ -649,76 +604,50 @@ const DashBoard = () => {
                     <EmailFormContainer>
                         <CardTitle>🔔 정원사 알림 설정</CardTitle>
                         
-                        {isEmailRegistered && !isEditingEmail ? (
-                            <>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '16px',
-                                    padding: '16px 24px',
-                                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
-                                    border: '2px solid var(--success-color)',
-                                    borderRadius: '12px',
-                                    color: 'var(--success-color)',
-                                    fontWeight: '600'
-                                }}>
-                                    <span>📧</span>
-                                    <span>{registeredEmail}</span>
-                                </div>
-                                <Button 
-                                    type="button" 
-                                    onClick={handleEditEmail}
-                                    style={{
-                                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                        border: 'none'
-                                    }}
-                                >
-                                    ✏️ 이메일 변경하기
-                                </Button>
-                            </>
+                        {userEmail ? (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px',
+                                padding: '16px 24px',
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))',
+                                border: '2px solid var(--success-color)',
+                                borderRadius: '12px',
+                                color: 'var(--success-color)',
+                                fontWeight: '600'
+                            }}>
+                                <span>📧</span>
+                                <span>{userEmail}</span>
+                                <span style={{fontSize: '14px', opacity: 0.8}}>(GitHub 계정 이메일)</span>
+                            </div>
                         ) : (
-                            <>
-                                <Input 
-                                    type="email" 
-                                    placeholder="정원 관리 알림을 받을 이메일을 입력하세요" 
-                                    value={email} 
-                                    onChange={handleEmailChange}
-                                />
-                                <div style={{display: 'flex', gap: '12px', flexWrap: 'wrap'}}>
-                                    <Button 
-                                        type="button" 
-                                        onClick={handleEmailSubmit} 
-                                        disabled={emailSubmitting}
-                                    >
-                                        {emailSubmitting ? (
-                                            <>
-                                                <LoadingSpinner />
-                                                {isEmailRegistered ? '이메일 변경 중...' : '정원사 등록 중...'}
-                                            </>
-                                        ) : (
-                                            isEmailRegistered ? '💌 이메일 변경하기' : '🌿 정원사로 등록하기'
-                                        )}
-                                    </Button>
-                                    {isEditingEmail && (
-                                        <Button 
-                                            type="button" 
-                                            onClick={handleCancelEdit}
-                                            style={{
-                                                background: '#6b7280',
-                                                border: 'none'
-                                            }}
-                                        >
-                                            취소
-                                        </Button>
-                                    )}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px',
+                                padding: '16px 24px',
+                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1))',
+                                border: '2px solid var(--error-color)',
+                                borderRadius: '12px',
+                                color: 'var(--error-color)',
+                                fontWeight: '600'
+                            }}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+                                    <span>⚠️</span>
+                                    <span>이메일 알림을 받을 수 없습니다</span>
                                 </div>
-                            </>
-                        )}
-                        
-                        {emailMessage && (
-                            emailMessage.type === 'success' ? 
-                                <SuccessMessage>{emailMessage.text}</SuccessMessage> :
-                                <ErrorMessage>{emailMessage.text}</ErrorMessage>
+                                <div style={{
+                                    fontSize: '14px', 
+                                    opacity: 0.9, 
+                                    fontWeight: '500',
+                                    lineHeight: '1.5'
+                                }}>
+                                    GitHub 계정에서 이메일이 private으로 설정되어 있습니다.<br/>
+                                    <strong>해결 방법:</strong><br/>
+                                    1. GitHub → Settings → Emails → "Keep my email addresses private" 해제<br/>
+                                    2. GitHub → Settings → Profile → "Public email"에서 이메일 선택
+                                </div>
+                            </div>
                         )}
                     </EmailFormContainer>
                 </Card>

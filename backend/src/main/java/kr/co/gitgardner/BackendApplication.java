@@ -24,7 +24,7 @@ public class BackendApplication {
 	
 	private static Map<String, Object> loadEnvFile() {
 		Map<String, Object> props = new HashMap<>();
-		try (BufferedReader reader = new BufferedReader(new FileReader("../.env"))) {
+		try (BufferedReader reader = new BufferedReader(new FileReader("backend/.env"))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (line.trim().isEmpty() || line.startsWith("#")) {
@@ -38,7 +38,6 @@ public class BackendApplication {
 						value = value.substring(1, value.length() - 1);
 					}
 					props.put(key, value);
-					System.out.println("Loaded env var: " + key + " = " + value);
 				}
 			}
 		} catch (IOException e) {

@@ -2,22 +2,6 @@ type Query{
     user: User!
     getContributionStatus: ContributionStatus!
     hasCommitToday: Boolean!
-    getUserEmail: EmailResponse!
-}
-
-type Mutation{
-    registerEmail(email: String!): RegisterResponse!
-    updateEmail(email: String!): RegisterResponse!
-}
-
-type RegisterResponse{
-    success: Boolean!
-    message: String!
-}
-
-type EmailResponse{
-    email: String
-    isRegistered: Boolean!
 }
 
 type User{
