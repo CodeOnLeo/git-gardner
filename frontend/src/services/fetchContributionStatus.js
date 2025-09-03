@@ -1,6 +1,6 @@
 export const fetchContributionStatus = async () => {
     try {
-        const response = await fetch("http://localhost:8080/graphql", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/graphql`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export const fetchContributionStatus = async () => {
 
 export const hasCommitToday = async () => {
     try{
-        const response = await fetch("http://localhost:8080/graphql", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/graphql`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

@@ -50,12 +50,12 @@ public class SecurityConfig {
                                 userService.saveOrUpdateUser(oAuth2User, authorizedClient);
                             }
                             
-                            response.sendRedirect("http://localhost:3000/dashboard");
+                            response.sendRedirect("http://192.168.0.31:3002/dashboard");
                         })
                 )
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .logoutSuccessUrl("http://localhost:3000")
+                        .logoutSuccessUrl("http://192.168.0.31:3002")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID"));
         return http.build();

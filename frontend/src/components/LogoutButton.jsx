@@ -57,7 +57,7 @@ const LogoutButton = () => {
     const handleLogout = () => {
         setIsLoggingOut(true);
         setTimeout(() => {
-            window.location.href = "http://localhost:8080/logout";
+            window.location.href = `${process.env.REACT_APP_API_URL}/logout`;
         }, 500);
     };
 

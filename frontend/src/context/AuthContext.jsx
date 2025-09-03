@@ -57,7 +57,7 @@ export const AuthProvider = ({children}) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:8080/authenticated", {
+        fetch(`${process.env.REACT_APP_API_URL}/authenticated`, {
             credentials: "include",
         })
             .then(async (res) => {

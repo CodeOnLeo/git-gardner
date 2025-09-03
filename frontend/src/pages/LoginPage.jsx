@@ -8,7 +8,7 @@ const LoginPage = () => {
         setIsLoading(true);
         // 실제 리다이렉트 전에 약간의 지연을 주어 로딩 상태를 보여줌
         setTimeout(() => {
-            window.location.href = "http://localhost:8080/oauth2/authorization/github";
+            window.location.href = `${process.env.REACT_APP_API_URL}/oauth2/authorization/github`;
         }, 500);
     };
 
