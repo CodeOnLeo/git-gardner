@@ -50,12 +50,12 @@ public class SecurityConfig {
                                 userService.saveOrUpdateUser(oAuth2User, authorizedClient);
                             }
                             
-                            response.sendRedirect("http://192.168.0.31:3002/dashboard");
+                            response.sendRedirect("https://git-gardenr.web.app/dashboard");
                         })
                 )
                 .logout(logout -> logout
                         .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .logoutSuccessUrl("http://192.168.0.31:3002")
+                        .logoutSuccessUrl("https://git-gardenr.web.app")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID"));
         return http.build();

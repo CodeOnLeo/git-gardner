@@ -20,6 +20,8 @@ public class CorsConfig {
         config.addAllowedOrigin("http://192.168.0.31:3000");
         config.addAllowedOrigin("http://192.168.0.31:3001");
         config.addAllowedOrigin("http://192.168.0.31:3002");
+        config.addAllowedOrigin("https://git-gardenr.web.app");
+        config.addAllowedOrigin("https://git-gardenr.firebaseapp.com");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
