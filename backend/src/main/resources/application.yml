@@ -12,6 +12,9 @@ spring:
       same-site: none
       secure: true
       http-only: true
+      domain: .railway.app
+      path: /
+      max-age: 86400
   jpa:
     hibernate:
       ddl-auto: create-drop
