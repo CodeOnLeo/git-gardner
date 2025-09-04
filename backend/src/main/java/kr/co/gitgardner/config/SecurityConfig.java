@@ -45,23 +45,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
-                            System.out.println("=== OAuth 로그인 성공 ===");
-                            System.out.println("세션 ID: " + request.getSession().getId());
-                            System.out.println("User-Agent: " + request.getHeader("User-Agent"));
-                            
                             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
                             String login = oAuth2User.getAttribute("login");
-                            System.out.println("GitHub 로그인: " + login);
                             
                             OAuth2AuthorizedClient authorizedClient = 
                                 authorizedClientService.loadAuthorizedClient("github", login);
                             
                             if (authorizedClient != null) {
                                 userService.saveOrUpdateUser(oAuth2User, authorizedClient);
-                                System.out.println("사용자 저장 완료");
                             }
                             
-                            System.out.println("대시보드로 리다이렉트 시작");
                             response.sendRedirect("https://git-gardenr.web.app/dashboard");
                         })
                 )
