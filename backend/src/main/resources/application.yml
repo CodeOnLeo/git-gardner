@@ -7,6 +7,11 @@ spring:
   h2:
     console:
       enabled: true
+  session:
+    cookie:
+      same-site: none
+      secure: true
+      http-only: true
   jpa:
     hibernate:
       ddl-auto: create-drop
