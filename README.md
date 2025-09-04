@@ -140,11 +140,9 @@ sequenceDiagram
 ### 1. GitHub 로그인
 웹사이트에 접속하여 "GitHub 계정으로 로그인" 버튼을 클릭합니다.
 
-<img width="484" alt="스크린샷 2024-12-09 오후 10 38 53" src="https://github.com/user-attachments/assets/18beeece-ff65-49a6-aad9-c24985fd2da4">
-
+ 
 OAuth2 인증을 통해 GitHub 계정을 안전하게 연결합니다.
 
-<img width="986" alt="스크린샷 2024-12-09 오후 10 41 49" src="https://github.com/user-attachments/assets/f1dd9684-4b74-41c2-a9fa-9940e162d78e">
 
 ### 2. 대시보드 확인
 로그인 성공 후 대시보드에서 다음과 같은 정보를 확인할 수 있습니다:
@@ -155,7 +153,6 @@ OAuth2 인증을 통해 GitHub 계정을 안전하게 연결합니다.
   - "애플리케이션 로그아웃": 앱에서만 로그아웃
   - GitHub 로그아웃 링크: GitHub 계정에서도 완전히 로그아웃
 
-<img width="469" alt="스크린샷 2024-12-18 오후 5 52 18" src="https://github.com/user-attachments/assets/56b42a88-e06f-4228-b445-56f00a16eb3a" />
 
 ### 3. 자동 알림 시스템
 - **매일 22시 자동 체크**: 서버에서 자동으로 당일 커밋 여부를 확인합니다.
