@@ -57,14 +57,25 @@ export const AuthProvider = ({children}) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
 
     useEffect(() => {
+        console.log("🔍 AuthContext: 인증 상태 확인 시작");
+        console.log("🌐 API URL:", process.env.REACT_APP_API_URL);
+        
         fetch(`${process.env.REACT_APP_API_URL}/authenticated`, {
             credentials: "include",
         })
             .then(async (res) => {
+                console.log("📡 /authenticated 응답 상태:", res.status);
+                console.log("🍪 응답 헤더 (Set-Cookie):", res.headers.get('Set-Cookie'));
+                console.log("🔒 응답 헤더 전체:", [...res.headers.entries()]);
+                
                 const isAuth = await res.json();
+                console.log("✅ 인증 응답 결과:", isAuth, typeof isAuth);
+                
                 setIsAuthenticated(isAuth);
             })
             .catch((err) => {
+                console.error("❌ /authenticated 요청 실패:", err);
+                console.log("🚫 인증 상태를 false로 설정");
                 setIsAuthenticated(false);
             });
     }, []);
