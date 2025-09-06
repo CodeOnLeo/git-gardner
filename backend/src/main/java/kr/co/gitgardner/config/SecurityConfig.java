@@ -3,6 +3,8 @@ package kr.co.gitgardner.config;
 import kr.co.gitgardner.security.JwtAuthenticationFilter;
 import kr.co.gitgardner.service.UserService;
 import kr.co.gitgardner.util.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +26,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 public class SecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final UserService userService;
     private final OAuth2AuthorizedClientService authorizedClientService;
     
@@ -54,24 +57,52 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
-                            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-                            String login = oAuth2User.getAttribute("login");
-                            String email = oAuth2User.getAttribute("email");
-                            
-                            OAuth2AuthorizedClient authorizedClient = 
-                                authorizedClientService.loadAuthorizedClient("github", login);
-                            
-                            if (authorizedClient != null) {
-                                userService.saveOrUpdateUser(oAuth2User, authorizedClient);
+                            try {
+                                OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+                                String login = oAuth2User.getAttribute("login");
+                                String email = oAuth2User.getAttribute("email");
+                                Long githubId = oAuth2User.getAttribute("id");
+                                String name = oAuth2User.getAttribute("name");
+                                String avatarUrl = oAuth2User.getAttribute("avatar_url");
+                                
+                                logger.info("OAuth2 로그인 성공 - GitHub ID: {}, Login: {}, Name: {}, Email: {}", 
+                                    githubId, login, name, email);
+                                
+                                OAuth2AuthorizedClient authorizedClient = 
+                                    authorizedClientService.loadAuthorizedClient("github", login);
+                                
+                                String accessToken = null;
+                                if (authorizedClient != null) {
+                                    accessToken = authorizedClient.getAccessToken().getTokenValue();
+                                    logger.info("OAuth2AuthorizedClient 로드 성공 - Login: {}, Token: {}", 
+                                        login, accessToken.substring(0, 10) + "...");
+                                } else {
+                                    logger.error("OAuth2AuthorizedClient 로드 실패 - Login: {}", login);
+                                }
+                                
+                                String token = jwtUtil.generateSecureTokenWithUserInfo(login, email != null ? email : "",
+                                    githubId, name, avatarUrl);
+                                logger.info("보안 JWT 토큰 생성 완료 - Login: {}, Token: {}...", login, token.substring(0, 20));
+                                
+                                String jwtCookieValue = String.format("jwt=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
+                                    token, 24 * 60 * 60);
+                                response.addHeader("Set-Cookie", jwtCookieValue);
+                                logger.info("JWT 쿠키 설정 완료 - Login: {}", login);
+                                
+                                if (accessToken != null) {
+                                    String accessTokenCookieValue = String.format("github_token=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
+                                        accessToken, 24 * 60 * 60);
+                                    response.addHeader("Set-Cookie", accessTokenCookieValue);
+                                    logger.info("GitHub Access Token 쿠키 설정 완료 - Login: {}", login);
+                                }
+                                
+                                response.sendRedirect("https://git-gardenr.web.app/dashboard?token=" + token);
+                                logger.info("리다이렉트 완료 - Login: {}", login);
+                                
+                            } catch (Exception e) {
+                                logger.error("OAuth2 성공 핸들러에서 예외 발생", e);
+                                response.sendRedirect("https://git-gardenr.web.app/?error=oauth_handler_error");
                             }
-                            
-                            String token = jwtUtil.generateToken(login, email != null ? email : "");
-                            
-                            String cookieValue = String.format("jwt=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
-                                token, 24 * 60 * 60);
-                            response.addHeader("Set-Cookie", cookieValue);
-                            
-                            response.sendRedirect("https://git-gardenr.web.app/dashboard?token=" + token);
                         })
                 );
         return http.build();

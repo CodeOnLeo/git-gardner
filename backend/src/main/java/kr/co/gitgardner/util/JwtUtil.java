@@ -30,6 +30,15 @@ public class JwtUtil {
         return createToken(claims, username);
     }
     
+    public String generateSecureTokenWithUserInfo(String login, String email, Long githubId, String name, String avatarUrl) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", email);
+        claims.put("githubId", githubId);
+        claims.put("name", name);
+        claims.put("avatarUrl", avatarUrl);
+        return createToken(claims, login);
+    }
+    
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .claims(claims)
@@ -56,6 +65,22 @@ public class JwtUtil {
     public String getEmailFromToken(String token) {
         return getClaimFromToken(token, claims -> claims.get("email", String.class));
     }
+    
+    public Long getGithubIdFromToken(String token) {
+        return getClaimFromToken(token, claims -> {
+            Object githubId = claims.get("githubId");
+            return githubId instanceof Integer ? ((Integer) githubId).longValue() : (Long) githubId;
+        });
+    }
+    
+    public String getNameFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("name", String.class));
+    }
+    
+    public String getAvatarUrlFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("avatarUrl", String.class));
+    }
+    
     
     public <T> T getClaimFromToken(String token, java.util.function.Function<Claims, T> claimsResolver) {
         final Claims claims = getAllClaimsFromToken(token);

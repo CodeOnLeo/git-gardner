@@ -1,16 +1,17 @@
 package kr.co.gitgardner.graphql;
 
 import graphql.schema.DataFetchingEnvironment;
-import kr.co.gitgardner.entity.User;
-import kr.co.gitgardner.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import kr.co.gitgardner.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
@@ -19,10 +20,12 @@ import java.util.List;
 
 @Controller
 public class GitHubGraphQL {
+    private static final Logger logger = LoggerFactory.getLogger(GitHubGraphQL.class);
+    
     private final WebClient webClient;
     
     @Autowired
-    private UserService userService;
+    private JwtUtil jwtUtil;
 
     public GitHubGraphQL(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com/graphql").build();
@@ -30,14 +33,24 @@ public class GitHubGraphQL {
 
     @QueryMapping
     public ContributionStatus getContributionStatus(DataFetchingEnvironment env) {
-        User user = getCurrentUser();
+        logger.info("GraphQL getContributionStatus called");
+        
+        UserInfo user = getCurrentUser();
         
         if (user == null) {
+            logger.warn("No authenticated user found for getContributionStatus");
             return new ContributionStatus(0, Collections.emptyList());
         }
         
-        String githubLogin = user.getLogin();
-        String accessToken = user.getAccessToken();
+        logger.info("User found: {} with token: {}", user.login(), user.accessToken() != null ? "present" : "null");
+        
+        String githubLogin = user.login();
+        String accessToken = user.accessToken();
+        
+        if (accessToken == null) {
+            logger.error("No access token found for user: {}", githubLogin);
+            return new ContributionStatus(0, Collections.emptyList());
+        }
 
         String query = """
                     query {
@@ -81,7 +94,7 @@ public class GitHubGraphQL {
 
     @QueryMapping
     public boolean hasCommitToday(DataFetchingEnvironment env) {
-        User user = getCurrentUser();
+        UserInfo user = getCurrentUser();
         
         if (user == null) {
             return false;
@@ -92,55 +105,6 @@ public class GitHubGraphQL {
         return status.days().stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
     }
 
-    public boolean hasCommitTodayWithToken(OAuth2User principal, OAuth2AuthorizedClient authorizedClient) {
-        try {
-            String githubLogin = principal.getAttribute("login");
-            String accessToken = authorizedClient.getAccessToken().getTokenValue();
-
-            String query = """
-                        query {
-                            user(login: "%s") {
-                                contributionsCollection {
-                                    contributionCalendar {
-                                        totalContributions
-                                        weeks {
-                                            contributionDays {
-                                                date
-                                                contributionCount
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    """.formatted(githubLogin);
-
-            GitHubResponse response = webClient.post()
-                    .header("Authorization", "Bearer " + accessToken)
-                    .header("Content-Type", "application/json")
-                    .bodyValue("{\"query\":\"" + query.replace("\"", "\\\"").replace("\n", " ") + "\"}")
-                    .retrieve()
-                    .bodyToMono(GitHubResponse.class)
-                    .block();
-
-            if (response == null || response.data == null || response.data.user == null) {
-                return false;
-            }
-
-            var calendar = response.data.user.contributionsCollection.contributionCalendar;
-            List<ContributionDay> days = calendar.weeks.stream()
-                    .flatMap(week -> week.contributionDays.stream())
-                    .map(day -> new ContributionDay(day.date, day.contributionCount))
-                    .toList();
-
-            LocalDate today = LocalDate.now();
-            return days.stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
     public boolean hasCommitTodayWithAccessToken(String login, String accessToken) {
         try {
@@ -184,29 +148,97 @@ public class GitHubGraphQL {
             return days.stream().anyMatch(day -> day.date().equals(today.toString()) && day.contributionCount() > 0);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error in hasCommitTodayWithAccessToken: {}", e.getMessage(), e);
             return false;
         }
     }
     
-    private User getCurrentUser() {
+    private UserInfo getCurrentUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null) {
+                logger.warn("No authentication context found");
                 return null;
             }
             
-            String username = authentication.getName();
-            return userService.findByLogin(username).orElse(null);
+            if (!authentication.isAuthenticated()) {
+                logger.warn("Authentication not authenticated: {}", authentication.getName());
+                return null;
+            }
+            
+            String token = extractJwtToken();
+            if (token == null) {
+                logger.warn("JWT token not found in request");
+                return null;
+            }
+            
+            String login = jwtUtil.getUsernameFromToken(token);
+            String email = jwtUtil.getEmailFromToken(token);
+            Long githubId = jwtUtil.getGithubIdFromToken(token);
+            String name = jwtUtil.getNameFromToken(token);
+            String avatarUrl = jwtUtil.getAvatarUrlFromToken(token);
+            
+            String accessToken = extractAccessTokenFromCookie();
+            
+            logger.info("User info extracted - Login: {}, GitHub ID: {}, AccessToken: {}", 
+                login, githubId, accessToken != null ? "present" : "null");
+            
+            return new UserInfo(githubId, name, login, avatarUrl, email, accessToken);
+            
         } catch (Exception e) {
-            // ignore
+            logger.error("Error in getCurrentUser: {}", e.getMessage(), e);
             return null;
         }
     }
     
+    private String extractJwtToken() {
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (requestAttributes == null) {
+            return null;
+        }
+        
+        HttpServletRequest request = requestAttributes.getRequest();
+        
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    private String extractAccessTokenFromCookie() {
+        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (requestAttributes == null) {
+            return null;
+        }
+        
+        HttpServletRequest request = requestAttributes.getRequest();
+        
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("github_token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        
+        return null;
+    }
+    
     public record ContributionStatus(int totalContributions, List<ContributionDay> days) {}
     public record ContributionDay(String date, int contributionCount) {}
+    
+    public record UserInfo(Long githubId, String name, String login, String avatarUrl, String email, String accessToken) {}
     
     public record GitHubResponse(Data data) {}
     public record Data(GitHubUser user) {}
