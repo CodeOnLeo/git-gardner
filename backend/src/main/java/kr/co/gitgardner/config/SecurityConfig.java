@@ -66,7 +66,12 @@ public class SecurityConfig {
                             }
                             
                             String token = jwtUtil.generateToken(login, email != null ? email : "");
-                            response.sendRedirect("https://git-gardenr.web.app/dashboard?token=" + token);
+                            
+                            String cookieValue = String.format("jwt=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None",
+                                token, 24 * 60 * 60);
+                            response.addHeader("Set-Cookie", cookieValue);
+                            
+                            response.sendRedirect("https://git-gardenr.web.app/dashboard");
                         })
                 );
         return http.build();
