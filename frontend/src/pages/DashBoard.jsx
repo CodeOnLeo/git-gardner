@@ -1,4 +1,5 @@
 import LogoutButton from "../components/LogoutButton";
+import { getApiEndpoint } from '../utils/apiConfig';
 import {
     Button, 
     Input, 
@@ -344,7 +345,7 @@ const DashBoard = () => {
 
     const fetchUserEmail = async () => {
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/graphql`, {
+            const response = await fetch(getApiEndpoint('/graphql'), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

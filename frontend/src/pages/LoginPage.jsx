@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { Button, Form, Icon, StyledWrapper, Title, LoadingSpinner } from "../components/styles/CommonStyles";
+import { getApiEndpoint } from '../utils/apiConfig';
 
 const LoginPage = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleGithubLogin = () => {
         setIsLoading(true);
+        const oauthUrl = getApiEndpoint('/oauth2/authorization/github');
+        
+        console.log('OAuth URL:', oauthUrl);
+        
         // 실제 리다이렉트 전에 약간의 지연을 주어 로딩 상태를 보여줌
         setTimeout(() => {
-            window.location.href = `${process.env.REACT_APP_API_URL}/oauth2/authorization/github`;
+            window.location.href = oauthUrl;
         }, 500);
     };
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, LogoutInfo, LoadingSpinner, CardTitle } from "./styles/CommonStyles";
 import styled from "styled-components";
+import { getApiEndpoint } from '../utils/apiConfig';
 
 const LogoutContainer = styled.div`
     display: flex;
@@ -57,7 +58,7 @@ const LogoutButton = () => {
     const handleLogout = () => {
         setIsLoggingOut(true);
         setTimeout(() => {
-            window.location.href = `${process.env.REACT_APP_API_URL}/logout`;
+            window.location.href = getApiEndpoint('/logout');
         }, 500);
     };
 

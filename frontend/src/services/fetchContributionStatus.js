@@ -1,6 +1,8 @@
+import { getApiEndpoint } from '../utils/apiConfig';
+
 export const fetchContributionStatus = async () => {
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/graphql`, {
+        const response = await fetch(getApiEndpoint('/graphql'), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -35,7 +37,7 @@ export const fetchContributionStatus = async () => {
 
 export const hasCommitToday = async () => {
     try{
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/graphql`, {
+        const response = await fetch(getApiEndpoint('/graphql'), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

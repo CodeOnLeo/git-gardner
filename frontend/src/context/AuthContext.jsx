@@ -1,5 +1,6 @@
 import {createContext, useContext, useEffect, useState} from "react";
 import styled from "styled-components";
+import { getApiEndpoint } from '../utils/apiConfig';
 
 const LoadingWrapper = styled.div`
     min-height: 100vh;
@@ -81,7 +82,7 @@ export const AuthProvider = ({children}) => {
 
     const validateTokenWithServer = async (token) => {
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/token`, {
+            const response = await fetch(getApiEndpoint('/auth/token'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
