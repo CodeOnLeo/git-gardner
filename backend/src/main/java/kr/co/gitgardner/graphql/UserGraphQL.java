@@ -1,24 +1,41 @@
 package kr.co.gitgardner.graphql;
 
+import kr.co.gitgardner.entity.User;
+import kr.co.gitgardner.service.UserService;
+import kr.co.gitgardner.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class UserGraphQL {
 
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @QueryMapping
-    public UserInfo user(@AuthenticationPrincipal OAuth2User principal) {
-        Integer githubId = principal.getAttribute("id");
-        Long id = githubId != null ? githubId.longValue() : null;
+    public UserInfo user() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+        
+        String username = authentication.getName();
+        User user = userService.findByLogin(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
         
         return new UserInfo(
-                id,
-                principal.getAttribute("name"),
-                principal.getAttribute("login"),
-                principal.getAttribute("avatar_url"),
-                principal.getAttribute("email")
+                user.getGithubId(),
+                user.getName(),
+                user.getLogin(),
+                user.getAvatarUrl(),
+                user.getEmail()
         );
     }
 

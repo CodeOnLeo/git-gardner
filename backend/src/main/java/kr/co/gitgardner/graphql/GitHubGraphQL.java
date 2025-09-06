@@ -1,13 +1,15 @@
 package kr.co.gitgardner.graphql;
 
 import graphql.schema.DataFetchingEnvironment;
+import kr.co.gitgardner.entity.User;
+import kr.co.gitgardner.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -18,24 +20,24 @@ import java.util.List;
 @Controller
 public class GitHubGraphQL {
     private final WebClient webClient;
-    private final OAuth2AuthorizedClientService authorizedClientService;
+    
+    @Autowired
+    private UserService userService;
 
-    public GitHubGraphQL(WebClient.Builder webClientBuilder, OAuth2AuthorizedClientService authorizedClientService) {
+    public GitHubGraphQL(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl("https://api.github.com/graphql").build();
-        this.authorizedClientService = authorizedClientService;
     }
 
     @QueryMapping
     public ContributionStatus getContributionStatus(DataFetchingEnvironment env) {
-        OAuth2User principal = getCurrentUser();
-        OAuth2AuthorizedClient authorizedClient = getCurrentAuthorizedClient();
+        User user = getCurrentUser();
         
-        if (principal == null || authorizedClient == null) {
+        if (user == null) {
             return new ContributionStatus(0, Collections.emptyList());
         }
         
-        String githubLogin = principal.getAttribute("login");
-        String accessToken = authorizedClient.getAccessToken().getTokenValue();
+        String githubLogin = user.getLogin();
+        String accessToken = user.getAccessToken();
 
         String query = """
                     query {
@@ -79,10 +81,9 @@ public class GitHubGraphQL {
 
     @QueryMapping
     public boolean hasCommitToday(DataFetchingEnvironment env) {
-        OAuth2User principal = getCurrentUser();
-        OAuth2AuthorizedClient authorizedClient = getCurrentAuthorizedClient();
+        User user = getCurrentUser();
         
-        if (principal == null || authorizedClient == null) {
+        if (user == null) {
             return false;
         }
         
@@ -188,30 +189,30 @@ public class GitHubGraphQL {
         }
     }
     
-    private OAuth2User getCurrentUser() {
+    private User getCurrentUser() {
         try {
-            SecurityContext context = SecurityContextHolder.getContext();
-            if (context.getAuthentication() instanceof OAuth2AuthenticationToken token) {
-                return token.getPrincipal();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
             }
+            
+            String username = authentication.getName();
+            return userService.findByLogin(username).orElse(null);
         } catch (Exception e) {
             // ignore
+            return null;
         }
-        return null;
     }
     
-    private OAuth2AuthorizedClient getCurrentAuthorizedClient() {
-        try {
-            SecurityContext context = SecurityContextHolder.getContext();
-            if (context.getAuthentication() instanceof OAuth2AuthenticationToken token) {
-                return authorizedClientService.loadAuthorizedClient(
-                    token.getAuthorizedClientRegistrationId(), 
-                    token.getName()
-                );
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
-    }
+    public record ContributionStatus(int totalContributions, List<ContributionDay> days) {}
+    public record ContributionDay(String date, int contributionCount) {}
+    
+    public record GitHubResponse(Data data) {}
+    public record Data(GitHubUser user) {}
+    public record GitHubUser(ContributionsCollection contributionsCollection) {}
+    public record ContributionsCollection(ContributionCalendar contributionCalendar) {}
+    public record ContributionCalendar(int totalContributions, List<Week> weeks) {}
+    public record Week(List<Day> contributionDays) {}
+    public record Day(String date, int contributionCount) {}
 }

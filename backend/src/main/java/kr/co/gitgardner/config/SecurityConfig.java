@@ -71,7 +71,7 @@ public class SecurityConfig {
                                 token, 24 * 60 * 60);
                             response.addHeader("Set-Cookie", cookieValue);
                             
-                            response.sendRedirect("https://git-gardenr.web.app/dashboard");
+                            response.sendRedirect("https://git-gardenr.web.app/dashboard?token=" + token);
                         })
                 );
         return http.build();
