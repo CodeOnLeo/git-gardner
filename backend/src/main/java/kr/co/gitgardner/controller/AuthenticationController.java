@@ -1,6 +1,7 @@
 package kr.co.gitgardner.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import kr.co.gitgardner.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,15 @@ public class AuthenticationController {
         logger.info("Request headers: Authorization={}, Content-Type={}", 
                     request.getHeader("Authorization"), request.getHeader("Content-Type"));
         
+        if (request.getCookies() != null) {
+            logger.info("Cookies found: {}", request.getCookies().length);
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                logger.info("Cookie: {}={}", cookie.getName(), cookie.getValue().substring(0, Math.min(10, cookie.getValue().length())) + "...");
+            }
+        } else {
+            logger.info("No cookies in request");
+        }
+        
         String token = extractTokenFromHeader(request);
         logger.info("Extracted token: {}", token != null ? "present" : "absent");
         
@@ -44,6 +54,17 @@ public class AuthenticationController {
         }
         logger.info("No token found, returning false");
         return false;
+    }
+
+    @GetMapping("/test-cookie")
+    public ResponseEntity<String> testCookie(HttpServletResponse response) {
+        String testToken = "test-jwt-token-12345";
+        String cookieValue = String.format("jwt=%s; Path=/; Max-Age=%d; HttpOnly; Secure; SameSite=None", 
+            testToken, 24 * 60 * 60);
+        response.addHeader("Set-Cookie", cookieValue);
+        
+        logger.info("Test cookie set: {}", cookieValue);
+        return ResponseEntity.ok("Test cookie set successfully");
     }
 
     @PostMapping("/auth/token")

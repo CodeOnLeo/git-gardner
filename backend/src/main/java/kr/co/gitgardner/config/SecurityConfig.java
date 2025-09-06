@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/authenticated", "/auth/token", "/graphiql", "/graphql").permitAll()
+                        .requestMatchers("/authenticated", "/auth/token", "/test-cookie", "/graphiql", "/graphql").permitAll()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/test-email").permitAll()
                         .anyRequest().authenticated())
