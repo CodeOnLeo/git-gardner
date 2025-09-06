@@ -19,6 +19,13 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.url.includes('/authenticated') ||
+      event.request.url.includes('/auth/token') ||
+      event.request.url.includes('/graphql') ||
+      event.request.url.includes('git-gardner-production.up.railway.app')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
