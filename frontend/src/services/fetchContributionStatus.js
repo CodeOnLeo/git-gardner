@@ -2,10 +2,12 @@ import { getApiEndpoint } from '../utils/apiConfig';
 
 export const fetchContributionStatus = async () => {
     try {
+        const token = localStorage.getItem('jwt_token');
         const response = await fetch(getApiEndpoint('/graphql'), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...(token && { "Authorization": `Bearer ${token}` })
             },
             body: JSON.stringify({
                 query: `
@@ -20,7 +22,6 @@ export const fetchContributionStatus = async () => {
                   }
                 `,
             }),
-            credentials: "include",
         });
 
         if(!response.ok){
@@ -37,10 +38,12 @@ export const fetchContributionStatus = async () => {
 
 export const hasCommitToday = async () => {
     try{
+        const token = localStorage.getItem('jwt_token');
         const response = await fetch(getApiEndpoint('/graphql'), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...(token && { "Authorization": `Bearer ${token}` })
             },
             body: JSON.stringify({
                 query: `
@@ -49,7 +52,6 @@ export const hasCommitToday = async () => {
                   }
                 `,
             }),
-            credentials: "include",
         });
 
         if(!response.ok){

@@ -345,12 +345,13 @@ const DashBoard = () => {
 
     const fetchUserEmail = async () => {
         try {
+            const token = localStorage.getItem('jwt_token');
             const response = await fetch(getApiEndpoint('/graphql'), {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    ...(token && { "Authorization": `Bearer ${token}` })
                 },
-                credentials: 'include', // 쿠키 포함하여 인증 정보 전송
                 body: JSON.stringify({
                     query: `query {
                         user {

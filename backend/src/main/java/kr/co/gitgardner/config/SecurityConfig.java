@@ -44,13 +44,10 @@ public class SecurityConfig {
                 // TODO: csrf 처리 필요
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .requiresChannel(channel -> 
-                        channel.requestMatchers(r -> r.getHeader("X-Forwarded-Proto") != null)
-                                .requiresSecure())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/authenticated", "/auth/token", "/graphiql", "graphql").permitAll()
+                        .requestMatchers("/authenticated", "/auth/token", "/graphiql", "/graphql").permitAll()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/test-email").permitAll()
                         .anyRequest().authenticated())
@@ -84,14 +81,20 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        configuration.addAllowedOrigin("https://git-gardenr.web.app");
-        configuration.addAllowedOrigin("http://localhost:3000");
+        configuration.addAllowedOriginPattern("https://git-gardenr.web.app");
+        configuration.addAllowedOriginPattern("http://localhost:3000");
         
-        configuration.addAllowedMethod("*");
+        configuration.addAllowedMethod("GET");
+        configuration.addAllowedMethod("POST");
+        configuration.addAllowedMethod("PUT");
+        configuration.addAllowedMethod("DELETE");
+        configuration.addAllowedMethod("OPTIONS");
         
         configuration.addAllowedHeader("*");
+        configuration.addExposedHeader("*");
         
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

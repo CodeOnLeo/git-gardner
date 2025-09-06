@@ -86,6 +86,7 @@ export const AuthProvider = ({children}) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: `token=${encodeURIComponent(token)}`
             });

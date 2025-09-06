@@ -11,24 +11,38 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 public class AuthenticationController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
     @Autowired
     private JwtUtil jwtUtil;
 
     @GetMapping("/authenticated")
     public boolean isAuthenticated(HttpServletRequest request) {
+        logger.info("Authentication check request from origin: {}", request.getHeader("Origin"));
+        logger.info("Request headers: Authorization={}, Content-Type={}", 
+                    request.getHeader("Authorization"), request.getHeader("Content-Type"));
+        
         String token = extractTokenFromHeader(request);
+        logger.info("Extracted token: {}", token != null ? "present" : "absent");
+        
         if (token != null) {
             try {
                 String username = jwtUtil.getUsernameFromToken(token);
-                return jwtUtil.validateToken(token, username);
+                boolean isValid = jwtUtil.validateToken(token, username);
+                logger.info("Token validation result for user {}: {}", username, isValid);
+                return isValid;
             } catch (Exception e) {
+                logger.error("Token validation error: {}", e.getMessage());
                 return false;
             }
         }
+        logger.info("No token found, returning false");
         return false;
     }
 

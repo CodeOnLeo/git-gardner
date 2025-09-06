@@ -19,13 +19,23 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.url.includes('/authenticated') ||
-      event.request.url.includes('/auth/token') ||
-      event.request.url.includes('/graphql') ||
-      event.request.url.includes('git-gardner-production.up.railway.app')) {
+  // API 요청이나 외부 도메인 요청은 Service Worker에서 처리하지 않음
+  const url = new URL(event.request.url);
+  
+  // 외부 API 도메인이거나 API 엔드포인트인 경우 Service Worker 무시
+  if (url.hostname !== self.location.hostname ||
+      url.pathname.includes('/authenticated') ||
+      url.pathname.includes('/auth/token') ||
+      url.pathname.includes('/graphql') ||
+      url.pathname.includes('/oauth2') ||
+      url.hostname.includes('railway.app') ||
+      url.hostname.includes('googleapis.com') ||
+      url.hostname.includes('github.com')) {
+    // Service Worker가 개입하지 않고 네트워크로 바로 요청
     return;
   }
 
+  // 정적 리소스만 캐시 처리
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -33,8 +43,11 @@ self.addEventListener('fetch', event => {
           return response;
         }
         return fetch(event.request);
-      }
-    )
+      })
+      .catch(() => {
+        // 네트워크 오류 시에도 Service Worker에서 처리하지 않음
+        return fetch(event.request);
+      })
   );
 });
 
