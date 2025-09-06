@@ -18,6 +18,20 @@ public class AuthenticationController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @GetMapping("/authenticated")
+    public boolean isAuthenticated(HttpServletRequest request) {
+        String token = extractTokenFromHeader(request);
+        if (token != null) {
+            try {
+                String username = jwtUtil.getUsernameFromToken(token);
+                return jwtUtil.validateToken(token, username);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     @PostMapping("/auth/token")
     public ResponseEntity<Map<String, Object>> validateToken(@RequestParam String token) {
         Map<String, Object> response = new HashMap<>();

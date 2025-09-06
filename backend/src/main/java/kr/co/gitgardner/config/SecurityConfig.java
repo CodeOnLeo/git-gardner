@@ -41,10 +41,13 @@ public class SecurityConfig {
                 // TODO: csrf 처리 필요
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .requiresChannel(channel -> 
+                        channel.requestMatchers(r -> r.getHeader("X-Forwarded-Proto") != null)
+                                .requiresSecure())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/token", "/graphiql", "graphql").permitAll()
+                        .requestMatchers("/authenticated", "/auth/token", "/graphiql", "graphql").permitAll()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/test-email").permitAll()
                         .anyRequest().authenticated())
