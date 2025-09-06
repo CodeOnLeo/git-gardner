@@ -55,29 +55,87 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({children}) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
+    const [user, setUser] = useState(null);
+
+    const getTokenFromUrl = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('token');
+    };
+
+    const getTokenFromStorage = () => {
+        return localStorage.getItem('jwt_token');
+    };
+
+    const setToken = (token) => {
+        if (token) {
+            localStorage.setItem('jwt_token', token);
+            const url = new URL(window.location);
+            url.searchParams.delete('token');
+            window.history.replaceState({}, document.title, url.toString());
+        }
+    };
+
+    const removeToken = () => {
+        localStorage.removeItem('jwt_token');
+    };
+
+    const validateTokenWithServer = async (token) => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `token=${encodeURIComponent(token)}`
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.valid) {
+                    setUser({
+                        username: data.username,
+                        email: data.email
+                    });
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.error('Token validation error:', error);
+            return false;
+        }
+    };
+
+    const checkAuthStatus = async () => {
+        let token = getTokenFromUrl();
+        if (token) {
+            setToken(token);
+        } else {
+            token = getTokenFromStorage();
+        }
+
+        if (token) {
+            const isValid = await validateTokenWithServer(token);
+            if (isValid) {
+                setIsAuthenticated(true);
+            } else {
+                removeToken();
+                setIsAuthenticated(false);
+                setUser(null);
+            }
+        } else {
+            setIsAuthenticated(false);
+        }
+    };
+
+    const logout = () => {
+        removeToken();
+        setIsAuthenticated(false);
+        setUser(null);
+    };
 
     useEffect(() => {
-        console.log("🔍 AuthContext: 인증 상태 확인 시작");
-        console.log("🌐 API URL:", process.env.REACT_APP_API_URL);
-        
-        fetch(`${process.env.REACT_APP_API_URL}/authenticated`, {
-            credentials: "include",
-        })
-            .then(async (res) => {
-                console.log("📡 /authenticated 응답 상태:", res.status);
-                console.log("🍪 응답 헤더 (Set-Cookie):", res.headers.get('Set-Cookie'));
-                console.log("🔒 응답 헤더 전체:", [...res.headers.entries()]);
-                
-                const isAuth = await res.json();
-                console.log("✅ 인증 응답 결과:", isAuth, typeof isAuth);
-                
-                setIsAuthenticated(isAuth);
-            })
-            .catch((err) => {
-                console.error("❌ /authenticated 요청 실패:", err);
-                console.log("🚫 인증 상태를 false로 설정");
-                setIsAuthenticated(false);
-            });
+        checkAuthStatus();
     }, []);
 
     if (isAuthenticated === null) {
@@ -92,7 +150,12 @@ export const AuthProvider = ({children}) => {
     }
 
     return (
-        <AuthContext.Provider value={{isAuthenticated}}>
+        <AuthContext.Provider value={{
+            isAuthenticated, 
+            user, 
+            logout,
+            token: getTokenFromStorage()
+        }}>
             {children}
         </AuthContext.Provider>
     );

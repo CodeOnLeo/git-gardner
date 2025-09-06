@@ -6,10 +6,6 @@ import {AuthProvider} from "./context/AuthContext";
 import PrivateRoute from "./routes/PrivateRoute";
 
 function App() {
-    console.log("🚀 App 컴포넌트 렌더링 시작");
-    console.log("📱 User Agent:", navigator.userAgent);
-    console.log("🌍 현재 URL:", window.location.href);
-    
     return (
         <AuthProvider>
             <BrowserRouter>

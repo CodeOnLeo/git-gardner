@@ -7,14 +7,6 @@ spring:
   h2:
     console:
       enabled: true
-  session:
-    cookie:
-      same-site: none
-      secure: true
-      http-only: true
-      domain: .railway.app
-      path: /
-      max-age: 86400
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -45,6 +37,10 @@ spring:
           auth: true
           starttls:
             enable: true
+
+jwt:
+  secret: ${JWT_SECRET:myDefaultSecretKeyForDevelopmentOnlyPleaseChangeInProduction}
+  expiration: 86400000
 
 logging:
   level:

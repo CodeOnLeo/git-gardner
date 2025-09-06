@@ -1,6 +1,9 @@
 package kr.co.gitgardner.config;
 
+import kr.co.gitgardner.security.JwtAuthenticationFilter;
 import kr.co.gitgardner.service.UserService;
+import kr.co.gitgardner.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -13,14 +16,19 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 
 @Configuration
 public class SecurityConfig {
     private final UserService userService;
     private final OAuth2AuthorizedClientService authorizedClientService;
+    
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
 
     public SecurityConfig(UserService userService, OAuth2AuthorizedClientService authorizedClientService) {
         this.userService = userService;
@@ -34,19 +42,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(10)
-                        .sessionRegistry(sessionRegistry()))
-                .securityContext(securityContext -> securityContext.requireExplicitSave(false))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/authenticated","/graphiql","graphql").permitAll()
+                        .requestMatchers("/auth/token", "/graphiql", "graphql").permitAll()
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/test-email").permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
                             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
                             String login = oAuth2User.getAttribute("login");
+                            String email = oAuth2User.getAttribute("email");
                             
                             OAuth2AuthorizedClient authorizedClient = 
                                 authorizedClientService.loadAuthorizedClient("github", login);
@@ -55,24 +62,15 @@ public class SecurityConfig {
                                 userService.saveOrUpdateUser(oAuth2User, authorizedClient);
                             }
                             
-                            response.sendRedirect("https://git-gardenr.web.app/dashboard");
+                            String token = jwtUtil.generateToken(login, email != null ? email : "");
+                            response.sendRedirect("https://git-gardenr.web.app/dashboard?token=" + token);
                         })
-                )
-                .logout(logout -> logout
-                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                        .logoutSuccessUrl("https://git-gardenr.web.app")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID"));
+                );
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-    
-    @Bean
-    public SessionRegistry sessionRegistry() {
-        return new SessionRegistryImpl();
     }
 }
