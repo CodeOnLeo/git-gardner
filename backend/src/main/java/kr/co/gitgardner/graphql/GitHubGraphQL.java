@@ -235,16 +235,7 @@ public class GitHubGraphQL {
         return null;
     }
     
-    public record ContributionStatus(int totalContributions, List<ContributionDay> days) {}
-    public record ContributionDay(String date, int contributionCount) {}
     
     public record UserInfo(Long githubId, String name, String login, String avatarUrl, String email, String accessToken) {}
     
-    public record GitHubResponse(Data data) {}
-    public record Data(GitHubUser user) {}
-    public record GitHubUser(ContributionsCollection contributionsCollection) {}
-    public record ContributionsCollection(ContributionCalendar contributionCalendar) {}
-    public record ContributionCalendar(int totalContributions, List<Week> weeks) {}
-    public record Week(List<Day> contributionDays) {}
-    public record Day(String date, int contributionCount) {}
 }

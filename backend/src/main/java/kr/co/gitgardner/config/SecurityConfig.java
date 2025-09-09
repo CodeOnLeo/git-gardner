@@ -1,7 +1,6 @@
 package kr.co.gitgardner.config;
 
 import kr.co.gitgardner.security.JwtAuthenticationFilter;
-import kr.co.gitgardner.service.UserService;
 import kr.co.gitgardner.util.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-    private final UserService userService;
     private final OAuth2AuthorizedClientService authorizedClientService;
     
     @Autowired
@@ -36,8 +34,7 @@ public class SecurityConfig {
     @Autowired
     private JwtUtil jwtUtil;
 
-    public SecurityConfig(UserService userService, OAuth2AuthorizedClientService authorizedClientService) {
-        this.userService = userService;
+    public SecurityConfig(OAuth2AuthorizedClientService authorizedClientService) {
         this.authorizedClientService = authorizedClientService;
     }
 
