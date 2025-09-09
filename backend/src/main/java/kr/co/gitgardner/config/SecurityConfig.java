@@ -58,7 +58,7 @@ public class SecurityConfig {
                                 OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
                                 String login = oAuth2User.getAttribute("login");
                                 String email = oAuth2User.getAttribute("email");
-                                Long githubId = oAuth2User.getAttribute("id");
+                                Long githubId = ((Number) oAuth2User.getAttribute("id")).longValue();
                                 String name = oAuth2User.getAttribute("name");
                                 String avatarUrl = oAuth2User.getAttribute("avatar_url");
                                 
@@ -66,7 +66,7 @@ public class SecurityConfig {
                                     githubId, login, name, email);
                                 
                                 OAuth2AuthorizedClient authorizedClient = 
-                                    authorizedClientService.loadAuthorizedClient("github", login);
+                                    authorizedClientService.loadAuthorizedClient("github", authentication.getName());
                                 
                                 String accessToken = null;
                                 if (authorizedClient != null) {
