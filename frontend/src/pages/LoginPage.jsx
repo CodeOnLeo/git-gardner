@@ -21,7 +21,7 @@ const LoginPage = () => {
         <StyledWrapper>
             <Form>
                 <Title>
-                    🌱 Git Gardner
+                    🌱 Git Gardener
                     <span>나만의 디지털 정원을 가꿔보세요</span>
                 </Title>
                 <Button type="button" onClick={handleGithubLogin} disabled={isLoading}>

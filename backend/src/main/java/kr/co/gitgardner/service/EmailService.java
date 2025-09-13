@@ -23,7 +23,7 @@ public class EmailService {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
         
-        mimeMessageHelper.setFrom(fromEmail, "GitGardner");
+        mimeMessageHelper.setFrom(fromEmail, "GitGardener");
         mimeMessageHelper.setTo(to);
         mimeMessageHelper.setSubject(subject);
         mimeMessageHelper.setText(text, false);

@@ -16,8 +16,8 @@ public class TestController {
     @GetMapping("/test-email")
     public String testEmail(@RequestParam(defaultValue = "codeonleo@gmail.com") String to) {
         try {
-            String subject = "[GitGardner] 메일 발송 테스트";
-            String message = "안녕하세요!\n\n이것은 GitGardner 메일 발송 기능 테스트입니다.\n\n메일이 정상적으로 발송되었다면 시스템이 올바르게 구성된 것입니다.\n\n- GitGardener Team";
+            String subject = "[GitGardener] 메일 발송 테스트";
+            String message = "안녕하세요!\n\n이것은 GitGardener 메일 발송 기능 테스트입니다.\n\n메일이 정상적으로 발송되었다면 시스템이 올바르게 구성된 것입니다.\n\n- GitGardener Team";
             
             emailService.sendMail(to, subject, message);
             return "메일이 성공적으로 발송되었습니다: " + to;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'git-gardner-v1';
+const CACHE_NAME = 'git-gardener-v1';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',

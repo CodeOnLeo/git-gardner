@@ -592,7 +592,7 @@ const DashBoard = () => {
             <DashboardContainer>
                 <Card>
                     <Title>
-                        Git Gardner
+                        Git Gardener
                         <span>매일매일 잔디를 관리하세요 🌱</span>
                     </Title>
                     
