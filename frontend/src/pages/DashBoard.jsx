@@ -345,13 +345,12 @@ const DashBoard = () => {
 
     const fetchUserEmail = async () => {
         try {
-            const token = localStorage.getItem('jwt_token');
             const response = await fetch(getApiEndpoint('/graphql'), {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    ...(token && { "Authorization": `Bearer ${token}` })
+                    "Content-Type": "application/json"
                 },
+                credentials: 'include', // 쿠키 포함
                 body: JSON.stringify({
                     query: `query {
                         user {
@@ -363,11 +362,11 @@ const DashBoard = () => {
 
             const data = await response.json();
             console.log("GraphQL response:", data); // 디버깅용 로그
-            
+
             if (data.errors) {
                 console.error("GraphQL errors:", data.errors);
             }
-            
+
             if (data.data && data.data.user) {
                 setUserEmail(data.data.user.email);
             } else {

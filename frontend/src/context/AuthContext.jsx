@@ -1,6 +1,7 @@
 import {createContext, useContext, useEffect, useState} from "react";
 import styled from "styled-components";
 import { getApiEndpoint } from '../utils/apiConfig';
+import { getCookie, setCookie, deleteAllAuthCookies } from '../utils/cookieUtils';
 
 const LoadingWrapper = styled.div`
     min-height: 100vh;
@@ -60,24 +61,33 @@ export const AuthProvider = ({children}) => {
 
     const getTokenFromUrl = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('token');
+        return {
+            jwt: urlParams.get('token'),
+            github_token: urlParams.get('github_token')
+        };
     };
 
-    const getTokenFromStorage = () => {
-        return localStorage.getItem('jwt_token');
+    const getTokenFromCookie = () => {
+        return getCookie('jwt');
     };
 
-    const setToken = (token) => {
-        if (token) {
-            localStorage.setItem('jwt_token', token);
-            const url = new URL(window.location);
-            url.searchParams.delete('token');
-            window.history.replaceState({}, document.title, url.toString());
+    const setTokens = (jwt, githubToken) => {
+        if (jwt) {
+            setCookie('jwt', jwt, 7);
         }
+        if (githubToken) {
+            setCookie('github_token', githubToken, 7);
+        }
+
+        // URL에서 토큰 파라미터 제거
+        const url = new URL(window.location);
+        url.searchParams.delete('token');
+        url.searchParams.delete('github_token');
+        window.history.replaceState({}, document.title, url.toString());
     };
 
-    const removeToken = () => {
-        localStorage.removeItem('jwt_token');
+    const removeTokens = () => {
+        deleteAllAuthCookies();
     };
 
     const validateTokenWithServer = async (token) => {
@@ -109,19 +119,21 @@ export const AuthProvider = ({children}) => {
     };
 
     const checkAuthStatus = async () => {
-        let token = getTokenFromUrl();
-        if (token) {
-            setToken(token);
+        const urlTokens = getTokenFromUrl();
+        let jwtToken = urlTokens.jwt;
+
+        if (jwtToken) {
+            setTokens(jwtToken, urlTokens.github_token);
         } else {
-            token = getTokenFromStorage();
+            jwtToken = getTokenFromCookie();
         }
 
-        if (token) {
-            const isValid = await validateTokenWithServer(token);
+        if (jwtToken) {
+            const isValid = await validateTokenWithServer(jwtToken);
             if (isValid) {
                 setIsAuthenticated(true);
             } else {
-                removeToken();
+                removeTokens();
                 setIsAuthenticated(false);
                 setUser(null);
             }
@@ -131,7 +143,7 @@ export const AuthProvider = ({children}) => {
     };
 
     const logout = () => {
-        removeToken();
+        removeTokens();
         setIsAuthenticated(false);
         setUser(null);
     };
@@ -153,10 +165,10 @@ export const AuthProvider = ({children}) => {
 
     return (
         <AuthContext.Provider value={{
-            isAuthenticated, 
-            user, 
+            isAuthenticated,
+            user,
             logout,
-            token: getTokenFromStorage()
+            token: getTokenFromCookie()
         }}>
             {children}
         </AuthContext.Provider>
